@@ -1,0 +1,49 @@
+<html> 
+
+<head>
+	<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>	
+	<link href="c3-0.3.0/c3.css" rel="stylesheet" type="text/css">
+	<script src="d3-master/d3.js" charset="utf-8"></script>
+	<script src="c3-0.3.0/c3.js"></script>
+	<script src="c3_wrapper.js"></script>
+
+	<link href="yikyak.css" rel="stylesheet" type="text/css">
+</head>
+
+
+<body>
+	<div id="topbox"> <div id="boxtext"> YIK YAK | STRESS ANALYSIS </div></div>
+
+	<div id="ivyleague">Ivy League Universities:
+		<br>
+		<hr noshade style="height:1px;color:gray; border:none">
+		<div class="explanation"> 
+			Based on Yaks extracted from various colleges, below are the following sentiments:
+			<br>
+		</div>
+		<div id="bar-chart"></div>
+	</div>
+	</body>
+	<script>
+	make_chart(
+		{
+			'bindto': '#bar-chart',
+			'graph_type': 'bar',
+			'legend': true,
+			'data': {
+				'Positive': [10, 20, 10, 30, 29, 36, 19],
+				'Neutral': [10, 30, 20, 20, 10, 30, 29],
+	            'Negative': [53, 20, 30, 16, 32, 12, 14]
+			},
+			'colors': {'Positive': '#2ecc71', 'Neutral': '#95a5a6', 'Negative': '#c0392b'},
+			'buckets': ['Cornell', 'Harvard', 'Princeton', 'Yale', 'Brown', 'Columbia', 'Dartmouth'],
+		}
+	)
+
+</script>
+
+</body>
+
+</html>
+
+
