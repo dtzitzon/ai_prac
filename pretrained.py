@@ -11,7 +11,6 @@ import random
 import pickle
 import pylab
 
-
 handle = open("trained", "rb")
 sums, positive, negative = pickle.load(handle)
 
@@ -40,6 +39,9 @@ def negate_sequence(text):
 def get_positive_prob(word):
     return 1.0 * (positive[word] + 1) / (2 * sums['pos'])
 
+def get_neutral_prob(word):
+    return 1.0 * (neutral[word] + 1) / (2 * sums['neutral'])
+
 def get_negative_prob(word):
     return 1.0 * (negative[word] + 1) / (2 * sums['neg'])
 
@@ -49,6 +51,7 @@ def classify(text, pneg = 0.5, preprocessor=negate_sequence):
 
     for word in words:
         pscore += log(get_positive_prob(word))
+        neutral += log(get_neutral_prob(word))
         nscore += log(get_negative_prob(word))
 
     return pscore > nscore
@@ -62,7 +65,7 @@ def classify_demo(text):
         ndelta = log(get_negative_prob(word))
         pscore += pdelta
         nscore += ndelta
-        print "%25s, pos=(%10lf, %10d) \t\t neg=(%10lf, %10d)" % (word, pdelta, positive[word], ndelta, negative[word]) 
+        print "%25s, pos=(%10lf, %10d) \t\t neg=(%10lf, %10d)" % (word, pdelta, positive[word], ndelta, negative[word])
 
     print "\nPositive" if pscore > nscore else "Negative"
     print "Confidence: %lf" % exp(abs(pscore - nscore))
@@ -70,13 +73,14 @@ def classify_demo(text):
 
 def test():
     strings = [
-    open("pos_example").read(), 
+    open("pos_example").read(),
     open("neg_example").read(),
     "This book was quite good.",
     "I think this product is horrible."
     ]
     print map(classify, strings)
 
+# TODO: adapt for neutral
 def mutual_info(word):
     """
     Finds the mutual information of a word with the training set.
@@ -84,13 +88,13 @@ def mutual_info(word):
     cnt_p, cnt_n = sums['pos'], sums['neg']
     total = cnt_n + cnt_p
     cnt_x = positive[word] + negative[word]
-    if (cnt_x == 0): 
+    if (cnt_x == 0):
         return 0
     cnt_x_p, cnt_x_n = positive[word], negative[word]
     I = [[0]*2]*2
-    I[0][0] = (cnt_n - cnt_x_n) * log ((cnt_n - cnt_x_n) * total / cnt_x / cnt_n) / total 
+    I[0][0] = (cnt_n - cnt_x_n) * log ((cnt_n - cnt_x_n) * total / cnt_x / cnt_n) / total
     I[0][1] = cnt_x_n * log ((cnt_x_n) * total / (cnt_x * cnt_n)) / total if cnt_x_n > 0 else 0
-    I[1][0] = (cnt_p - cnt_x_p) * log ((cnt_p - cnt_x_p) * total / cnt_x / cnt_p) / total 
+    I[1][0] = (cnt_p - cnt_x_p) * log ((cnt_p - cnt_x_p) * total / cnt_x / cnt_p) / total
     I[1][1] = cnt_x_p * log ((cnt_x_p) * total / (cnt_x * cnt_p)) / total if cnt_x_p > 0 else 0
 
     return sum(map(sum, I))
@@ -122,18 +126,9 @@ def feature_selection_experiment(test_set):
     pylab.plot(num_features, accuracy)
     pylab.show()
 
-def get_paths():
-    """
-    Returns supervised paths annotated with their actual labels.
-    """
-    posfiles = [("./aclImdb/test/pos/" + f, True) for f in os.listdir("./aclImdb/test/pos/")[:500]]
-    negfiles = [("./aclImdb/test/neg/" + f, False) for f in os.listdir("./aclImdb/test/neg/")[:500]]
-    return posfiles + negfiles
-
 if __name__ == '__main__':
     print mutual_info('good')
     print mutual_info('bad')
     print mutual_info('incredible')
     print mutual_info('jaskdhkasjdhkjincredible')
-    feature_selection_experiment(get_paths())
 
