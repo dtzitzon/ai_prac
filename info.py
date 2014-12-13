@@ -16,15 +16,16 @@ class MyDict(dict):
 
 pos = MyDict()
 neg = MyDict()
+neutral = MyDict()
 features = set()
-totals = [0, 0]
+totals = [0, 0, 0]
 delchars = ''.join(c for c in map(chr, range(128)) if not c.isalnum())
 
 CDATA_FILE = "countdata.pickle"
 FDATA_FILE = "reduceddata.pickle"
 
-training_data=open('training_data')
-data = json.load(json_data)
+training_data=open('training_data.json')
+data = json.load(training_data)
 training_data.close()
 
 def negate_sequence(text):
@@ -69,17 +70,17 @@ def train():
         pos, neg, totals = cPickle.load(open(CDATA_FILE))
         return
 
-    for school in data:
-        for yak in data[school]['yaks']:
-            for word in yak['message']:
-                if yak['sentiment'] == 'positive':
-                    pos[word] += 1
-                    neg['not_' + word] += 1
-                elif yak['sentiment'] == 'negative':
-                    neg[word] += 1
-                    pos['not_' + word] += 1
-                else:
-                    neutral[word] += 1
+    # for school in data:
+    for yak in data['yacks']:
+        for word in yak['message']:
+            # if yak['sentiment'] == 'positive':
+                pos[word] += 1
+                neg['not_' + word] += 1
+            # elif yak['sentiment'] == 'negative':
+                # neg[word] += 1
+                # pos['not_' + word] += 1
+            # else:
+                # neutral[word] += 1
 
 
     prune_features()
