@@ -1,10 +1,13 @@
 from __future__ import division
+from pprint import pprint
 from math import log, exp
 from operator import mul
 from collections import Counter
-import json
+from collections import defaultdict
+from nltk.corpus import stopwords
 import os
 import pylab
+import json
 import cPickle
 
 
@@ -14,18 +17,20 @@ class MyDict(dict):
             return self.get(key)
         return 0
 
+stop = stopwords.words("english")
 pos = MyDict()
 neg = MyDict()
 features = set()
-totals = [0, 0]
+totals = {'pos': 0, 'neg':0}
 delchars = ''.join(c for c in map(chr, range(128)) if not c.isalnum())
+
+with open('training_data.json') as data_file:
+    training_data = json.load(data_file)
+
 
 CDATA_FILE = "countdata.pickle"
 FDATA_FILE = "reduceddata.pickle"
 
-training_data=open('training_data')
-data = json.load(json_data)
-training_data.close()
 
 def negate_sequence(text):
     """
@@ -69,47 +74,34 @@ def train():
         pos, neg, totals = cPickle.load(open(CDATA_FILE))
         return
 
-    for school in data:
-        for yak in data[school]['yaks']:
-            for word in yak['message']:
-                if yak['sentiment'] == 'positive':
-                    pos[word] += 1
-                    neg['not_' + word] += 1
-                elif yak['sentiment'] == 'negative':
-                    neg[word] += 1
-                    pos['not_' + word] += 1
-                else:
-                    neutral[word] += 1
-
+    limit = 12500
+    for yak in training_data['yaks']:
+        for word in set(negate_sequence(yak['message'])):
+            # if word.lower() in stop:
+                # continue
+            if yak['sentiment'] == 'positive':
+                pos[word] += 1
+                neg['not_' + word] += 1
+            elif yak['sentiment'] == 'negative':
+                neg[word] += 1
+                pos['not_' + word] += 1
 
     prune_features()
 
-    totals[0] = sum(pos.values())
-    totals[1] = sum(neutral.values())
-    totals[2] = sum(neg.values())
+    totals['pos'] = sum(pos.values())
+    totals['neg'] = sum(neg.values())
 
     countdata = (pos, neg, totals)
+    # pprint(countdata)
     cPickle.dump(countdata, open(CDATA_FILE, 'w'))
 
 def classify(text):
     words = set(word for word in negate_sequence(text) if word in features)
     if (len(words) == 0): return True
     # Probability that word occurs in pos documents
-    pos_prob = sum(log((pos[word] + 1) / (2 * totals[0])) for word in words)
-    neutral_prob = sum(log((neutral[word] + 1) / (2 * totals[1])) for word in words)
-    neg_prob = sum(log((neg[word] + 1) / (2 * totals[2])) for word in words)
-    return pos_prob > neg_prob
-
-def classify2(text):
-    """
-    For classification from pretrained data
-    """
-    words = set(word for word in negate_sequence(text) if word in pos or word in neg)
-    if (len(words) == 0): return True
-    # Probability that word occurs in pos documents
-    pos_prob = sum(log((pos[word] + 1) / (2 * totals[0])) for word in words)
-    neutral_prob = sum(log((neutral[word] + 1) / (2 * totals[1])) for word in words)
-    neg_prob = sum(log((neg[word] + 1) / (2 * totals[2])) for word in words)
+    pos_prob = sum(log((pos[word] + 1) / (2 * totals['pos'])) for word in words)
+    neg_prob = sum(log((neg[word] + 1) / (2 * totals['neg'])) for word in words)
+    print str(pos_prob) + " : " + str(neg_prob)
     return pos_prob > neg_prob
 
 def classify_demo(text):
@@ -120,70 +112,52 @@ def classify_demo(text):
 
     pprob, nprob = 0, 0
     for word in words:
-        posp = log((pos[word] + 1) / (2 * totals[0]))
-        neutp = log((neutral[word] + 1) / (2 * totals[1]))
-        negp = log((neg[word] + 1) / (2 * totals[2]))
-        print "%15s %.9f %.9f" % (word, exp(posp), exp(negp))
-        pprob += posp
-        neutprob += neutp
-        nprob += negp
+        pp = log((pos[word] + 1) / (2 * totals['pos']))
+        np = log((neg[word] + 1) / (2 * totals['neg']))
+        print "%15s %.9f %.9f" % (word, exp(pp), exp(np))
+        pprob += pp
+        nprob += np
 
-    cls = max(pprob, neutprob, nprob)
-    if cls == pprob:
-        print "Positive", "prob = %.9f" % pprob
-    elif cls == neutprob:
-        print "Neutral", "prob = %.9f" % pprob
-    else:
-        print "Negative", "prob = %.9f" % pprob
+    print ("Positive" if pprob > nprob else "Negative"), "log-diff = %.9f" % abs(pprob - nprob)
 
 def MI(word):
     """
     Compute the weighted mutual information of a term.
     """
-    T = totals[0] + totals[1] + totals[2]
-    W = pos[word] + neutral[word] + neg[word]
+    T = totals['pos'] + totals['neg']
+    W = pos[word] + neg[word]
     I = 0
     if W==0:
         return 0
     if neg[word] > 0:
         # doesn't occur in -ve
-        I += (totals[2] - neg[word]) / T * log ((totals[2] - neg[word]) * T / (T - W) / totals[2])
+        I += (totals['neg'] - neg[word]) / T * log ((totals['neg'] - neg[word]) * T / (T - W) / totals['neg'])
         # occurs in -ve
-        I += neg[word] / T * log (neg[word] * T / W / totals[2])
-    if neutral[word] > 0:
-        # doesn't occur in +ve
-        I += (totals[1] - neutral[word]) / T * log ((totals[1] - neutral[word]) * T / (T - W) / totals[1])
-        # occurs in +ve
-        I += neutal[word] / T * log (neutral[word] * T / W / totals[1])
+        I += neg[word] / T * log (neg[word] * T / W / totals['neg'])
     if pos[word] > 0:
         # doesn't occur in +ve
-        I += (totals[0] - pos[word]) / T * log ((totals[0] - pos[word]) * T / (T - W) / totals[0])
+        I += (totals['pos'] - pos[word]) / T * log ((totals['pos'] - pos[word]) * T / (T - W) / totals['pos'])
         # occurs in +ve
-        I += pos[word] / T * log (pos[word] * T / W / totals[0])
+        I += pos[word] / T * log (pos[word] * T / W / totals['pos'])
     return I
 
 def get_relevant_features():
     pos_dump = MyDict({k: pos[k] for k in pos if k in features})
-    neutral_dump = MyDict({k: neutral[k] for k in neutral if k in features})
     neg_dump = MyDict({k: neg[k] for k in neg if k in features})
     totals_dump = [sum(pos_dump.values()), sum(neg_dump.values())]
-    return (pos_dump, neutral_dump, neg_dump, totals_dump)
+    return (pos_dump, neg_dump, totals_dump)
 
 def prune_features():
     """
     Remove features that appear only once.
     """
-    global pos, neg, neutral
+    global pos, neg
     for k in pos.keys():
-        if pos[k] <= 1 and neg[k] <= 1 and neutral[k] <= 1:
+        if pos[k] <= 1 and neg[k] <= 1:
             del pos[k]
 
-    for k in neutral.keys():
-        if pos[k] <= 1 and neg[k] <= 1 and neutral[k] <= 1:
-            del neutral[k]
-
     for k in neg.keys():
-        if pos[k] <= 1 and neg[k] <= 1 and neutral[k] <= 1:
+        if neg[k] <= 1 and pos[k] <= 1:
             del neg[k]
 
 def feature_selection_trials():
@@ -250,7 +224,7 @@ def test_pang_lee():
 
 if __name__ == '__main__':
     train()
-    feature_selection_trials()
+    # feature_selection_trials()
     # test_pang_lee()
     # classify_demo(open("pos_example").read())
     # classify_demo(open("neg_example").read())

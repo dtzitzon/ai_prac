@@ -11,8 +11,8 @@ import random
 import pickle
 import pylab
 
-handle = open("trained", "rb")
-sums, positive, negative = pickle.load(handle)
+handle = open("countdata.pickle", "rb")
+positive, negative, sums = pickle.load(handle)
 
 def tokenize(text):
     return re.findall("\w+", text)
@@ -39,9 +39,6 @@ def negate_sequence(text):
 def get_positive_prob(word):
     return 1.0 * (positive[word] + 1) / (2 * sums['pos'])
 
-def get_neutral_prob(word):
-    return 1.0 * (neutral[word] + 1) / (2 * sums['neutral'])
-
 def get_negative_prob(word):
     return 1.0 * (negative[word] + 1) / (2 * sums['neg'])
 
@@ -51,9 +48,9 @@ def classify(text, pneg = 0.5, preprocessor=negate_sequence):
 
     for word in words:
         pscore += log(get_positive_prob(word))
-        neutral += log(get_neutral_prob(word))
         nscore += log(get_negative_prob(word))
 
+    print "pos: " + str(pscore) + " / neg: " + str(nscore)
     return pscore > nscore
 
 def classify_demo(text):
@@ -68,6 +65,7 @@ def classify_demo(text):
         print "%25s, pos=(%10lf, %10d) \t\t neg=(%10lf, %10d)" % (word, pdelta, positive[word], ndelta, negative[word])
 
     print "\nPositive" if pscore > nscore else "Negative"
+    print "log-differetce %.9f" % abs(pscore - nscore)
     print "Confidence: %lf" % exp(abs(pscore - nscore))
     return pscore > nscore, pscore, nscore
 
@@ -80,7 +78,6 @@ def test():
     ]
     print map(classify, strings)
 
-# TODO: adapt for neutral
 def mutual_info(word):
     """
     Finds the mutual information of a word with the training set.
@@ -126,9 +123,18 @@ def feature_selection_experiment(test_set):
     pylab.plot(num_features, accuracy)
     pylab.show()
 
+def get_paths():
+    """
+    Returns supervised paths annotated with their actual labels.
+    """
+    posfiles = [("./aclImdb/test/pos/" + f, True) for f in os.listdir("./aclImdb/test/pos/")[:500]]
+    negfiles = [("./aclImdb/test/neg/" + f, False) for f in os.listdir("./aclImdb/test/neg/")[:500]]
+    return posfiles + negfiles
+
 if __name__ == '__main__':
     print mutual_info('good')
     print mutual_info('bad')
     print mutual_info('incredible')
     print mutual_info('jaskdhkasjdhkjincredible')
+    feature_selection_experiment(get_paths())
 
