@@ -7,6 +7,7 @@ from functools import partial
 import re
 import os
 import random
+import itertools
 import pickle
 import json
 import pylab
@@ -50,7 +51,6 @@ def classify(text, preprocessor=negate_sequence):
         pscore += log(get_positive_prob(word))
         nscore += log(get_negative_prob(word))
 
-    print "pos: " + str(pscore) + " / neg: " + str(nscore)
     return pscore > nscore
 
 def classify_demo(text):
@@ -96,6 +96,15 @@ def mutual_info(word):
 def reduce_features(features, stream):
     return [word for word in negate_sequence(stream) if word in features]
 
+def reduce_features_with_bigrams(features, stream):
+    words = []
+    word_set = negate_sequence(stream)
+    words += [word for word in word_set if word in features]
+    for w1, w2 in itertools.izip(word_set, word_set[1:]):
+        if w1+' '+w2 in features:
+            words.append(w1+' '+w2)
+    return words
+
 def feature_selection_experiment(test_set):
     """
     Select top k features. Vary k from 1000 to 50000 and plot data
@@ -104,10 +113,10 @@ def feature_selection_experiment(test_set):
     sorted_keys = sorted(keys, cmp=lambda x, y: mutual_info(x) > mutual_info(y)) # Sort descending by mutual info
     features = set()
     num_features, accuracy = [], []
-    print sorted_keys[-100:]
 
     for k in xrange(0, 50000, 1000):
         features |= set(sorted_keys[k:k+1000])
+        # preprocessor = partial(reduce_features, features)
         preprocessor = partial(reduce_features, features)
         correct = 0
         tested = 0
@@ -125,8 +134,6 @@ def feature_selection_experiment(test_set):
 
         num_features.append(k+1000)
         accuracy.append(correct / tested)
-    print negate_sequence("Is this a good idea")
-    print reduce_features(features, "Is this a good idea")
 
     pylab.plot(num_features, accuracy)
     pylab.show()
@@ -139,9 +146,5 @@ def get_paths():
     return testfiles
 
 if __name__ == '__main__':
-    print mutual_info('good')
-    print mutual_info('bad')
-    print mutual_info('incredible')
-    print mutual_info('jaskdhkasjdhkjincredible')
     feature_selection_experiment(get_paths())
 
