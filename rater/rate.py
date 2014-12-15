@@ -3,7 +3,7 @@ import json
 def main():
 
     data = None
-    with open("Brown_University.json", 'r') as jsonFile:
+    with open("Harvard_University.json", 'r') as jsonFile:
         data = json.load(jsonFile)
         print(jsonFile)
 
@@ -36,13 +36,13 @@ def main():
                 break
             elif pieces[0] == "s":
                 print("saved")
-                with open('brownrated.json', 'w') as outfile:
+                with open('harvardrated.json', 'w') as outfile:
                     outfile.write(str(json.dumps(ratedYaks, ensure_ascii=False)))
             else:
                 print("input '" + pieces[0] + "' not recognized")
 
 
-    with open('brownrated.json', 'w') as outfile:
+    with open('harvardrated.json', 'w') as outfile:
         outfile.write(str(json.dumps(ratedYaks, ensure_ascii=False)))
 
 main()
