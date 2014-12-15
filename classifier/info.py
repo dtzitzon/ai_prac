@@ -10,6 +10,7 @@ import glob
 import errno
 import os
 import pylab
+import csv
 import json
 import cPickle
 
@@ -26,10 +27,6 @@ neg = MyDict()
 features = set()
 totals = {'pos': 0, 'neg':0}
 delchars = ''.join(c for c in map(chr, range(128)) if not c.isalnum())
-
-with open('training_data.json') as data_file:
-    training_data = json.load(data_file)
-
 
 CDATA_FILE = "countdata.pickle"
 FDATA_FILE = "reduceddata.pickle"
@@ -80,16 +77,29 @@ def train():
     #     pos, neg, totals = cPickle.load(open(CDATA_FILE))
     #     return
 
+    # Cornell Movie Review Data
+    # for file in os.listdir(POS_PATH):
+    #     for word in set(negate_sequence(open(POS_PATH + '/' + file).read())):
+    #         pos[word] += 1
+    #         neg['not_' + word] += 1
+    # for file in os.listdir(NEG_PATH):
+    #     for word in set(negate_sequence(open(NEG_PATH + '/' + file).read())):
+    #         neg[word] += 1
+    #         pos['not_' + word] += 1
 
-    for file in os.listdir(POS_PATH):
-        for word in set(negate_sequence(open(POS_PATH + '/' + file).read())):
-            pos[word] += 1
-            neg['not_' + word] += 1
-    for file in os.listdir(NEG_PATH):
-        for word in set(negate_sequence(open(NEG_PATH + '/' + file).read())):
-            neg[word] += 1
-            pos['not_' + word] += 1
+    with open('../trainingdata/twitter_training_data.csv', 'rU') as csvfile:
+        tweets = csv.reader(csvfile)
+        for row in tweets:
+            if row[0] == '4': # positive
+                for word in set(negate_sequence(row[1])):
+                    pos[word] += 1
+                    neg['not_'+word] += 1
+            elif row[0] == '0': # positive
+                for word in set(negate_sequence(row[1])):
+                    neg[word] += 1
+                    pos['not_'+word] += 1
 
+    # Hand Selected Yaks
     # for yak in training_data['yaks']:
     #     for word in set(negate_sequence(yak['message'])):
     #         # if word.lower() in stop:

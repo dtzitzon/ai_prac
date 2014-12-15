@@ -8,6 +8,7 @@ import re
 import os
 import random
 import pickle
+import json
 import pylab
 
 handle = open("countdata.pickle", "rb")
@@ -109,10 +110,21 @@ def feature_selection_experiment(test_set):
         features |= set(sorted_keys[k:k+1000])
         preprocessor = partial(reduce_features, features)
         correct = 0
-        for text, label in test_set:
-            correct += classify(text) == label
+        tested = 0
+        for filename in test_set:
+            with open("../testdata/" + filename) as test_file:
+                test_data = json.load(test_file)
+
+            for yak in test_data['yaks']:
+                if yak['sentiment'] == 'positive':
+                    tested += 1
+                    correct += classify(yak['message'], preprocessor) == True
+                elif yak['sentiment'] == 'neutral':
+                    tested += 1
+                    correct += classify(yak['message'], preprocessor) == False
+
         num_features.append(k+1000)
-        accuracy.append(correct / len(test_set))
+        accuracy.append(correct / tested)
     print negate_sequence("Is this a good idea")
     print reduce_features(features, "Is this a good idea")
 
@@ -123,9 +135,8 @@ def get_paths():
     """
     Returns supervised paths annotated with their actual labels.
     """
-    posfiles = [("./aclImdb/test/pos/" + f, True) for f in os.listdir("./aclImdb/test/pos/")[:500]]
-    negfiles = [("./aclImdb/test/neg/" + f, False) for f in os.listdir("./aclImdb/test/neg/")[:500]]
-    return posfiles + negfiles
+    testfiles = [("../testdata/" + f) for f in os.listdir("../testdata/")]
+    return testfiles
 
 if __name__ == '__main__':
     print mutual_info('good')
