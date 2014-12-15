@@ -5,6 +5,9 @@ from operator import mul
 from collections import Counter
 from collections import defaultdict
 from nltk.corpus import stopwords
+import sys
+import glob
+import errno
 import os
 import pylab
 import json
@@ -30,6 +33,9 @@ with open('training_data.json') as data_file:
 
 CDATA_FILE = "countdata.pickle"
 FDATA_FILE = "reduceddata.pickle"
+
+POS_PATH = "../trainingdata/pos"
+NEG_PATH = "../trainingdata/neg"
 
 
 def negate_sequence(text):
@@ -70,21 +76,30 @@ def train():
     retrain = False
 
     # Load counts if they already exist.
-    if not retrain and os.path.isfile(CDATA_FILE):
-        pos, neg, totals = cPickle.load(open(CDATA_FILE))
-        return
+    # if not retrain and os.path.isfile(CDATA_FILE):
+    #     pos, neg, totals = cPickle.load(open(CDATA_FILE))
+    #     return
 
-    limit = 12500
-    for yak in training_data['yaks']:
-        for word in set(negate_sequence(yak['message'])):
-            # if word.lower() in stop:
-                # continue
-            if yak['sentiment'] == 'positive':
-                pos[word] += 1
-                neg['not_' + word] += 1
-            elif yak['sentiment'] == 'negative':
-                neg[word] += 1
-                pos['not_' + word] += 1
+
+    for file in os.listdir(POS_PATH):
+        for word in set(negate_sequence(open(POS_PATH + '/' + file).read())):
+            pos[word] += 1
+            neg['not_' + word] += 1
+    for file in os.listdir(NEG_PATH):
+        for word in set(negate_sequence(open(NEG_PATH + '/' + file).read())):
+            neg[word] += 1
+            pos['not_' + word] += 1
+
+    # for yak in training_data['yaks']:
+    #     for word in set(negate_sequence(yak['message'])):
+    #         # if word.lower() in stop:
+    #             # continue
+    #         if yak['sentiment'] == 'positive':
+    #             pos[word] += 1
+    #             neg['not_' + word] += 1
+    #         elif yak['sentiment'] == 'negative':
+    #             neg[word] += 1
+    #             pos['not_' + word] += 1
 
     prune_features()
 

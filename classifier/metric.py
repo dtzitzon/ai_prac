@@ -4,15 +4,6 @@ Author: Vivek Narayanan
 """
 import os
 
-def get_paths():
-    """
-    Returns supervised paths annotated with their actual labels.
-    """
-    posfiles = [("./aclImdb/test/pos/" + f, True) for f in os.listdir("./aclImdb/test/pos/")]
-    negfiles = [("./aclImdb/test/neg/" + f, False) for f in os.listdir("./aclImdb/test/neg/")]
-    return posfiles + negfiles
-
-
 def fscore(classifier, file_paths):
     tpos, fpos, fneg, tneg = 0, 0, 0, 0
     for path, label in file_paths:
@@ -32,10 +23,5 @@ def fscore(classifier, file_paths):
     # print "True Positives: %d\nFalse Positives: %d\nFalse Negatives: %d\n" % (tpos, fpos, fneg)
     print "Precision: %lf\nRecall: %lf\nAccuracy: %lf" % (prec, recall, accu)
 
-def main():
-    from altbayes import classify, train 
-    train()
-    fscore(classify, get_paths())
-
 if __name__ == '__main__':
-    main()
+    fscore(classify, get_paths())
