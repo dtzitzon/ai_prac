@@ -45,6 +45,7 @@ def get_negative_prob(word):
 
 def classify(text, preprocessor=negate_sequence):
     words = preprocessor(text)
+    print words
     pscore, nscore = 0, 0
 
     for word in words:
@@ -54,7 +55,8 @@ def classify(text, preprocessor=negate_sequence):
     return pscore > nscore
 
 def classify_demo(text):
-    words = negate_sequence(text)
+    features = set(positive.keys() + negative.keys())
+    words = reduce_features_with_bigrams(features, text)
     pscore, nscore = 0, 0
 
     for word in words:
@@ -114,10 +116,10 @@ def feature_selection_experiment(test_set):
     features = set()
     num_features, accuracy = [], []
 
-    for k in xrange(0, 50000, 1000):
-        features |= set(sorted_keys[k:k+1000])
-        # preprocessor = partial(reduce_features, features)
+    for k in xrange(0, 500000, 5000):
+        features |= set(sorted_keys[k:k+5000])
         preprocessor = partial(reduce_features, features)
+        # preprocessor = partial(reduce_features_with_bigrams, features)
         correct = 0
         tested = 0
         for filename in test_set:
@@ -132,7 +134,7 @@ def feature_selection_experiment(test_set):
                     tested += 1
                     correct += classify(yak['message'], preprocessor) == False
 
-        num_features.append(k+1000)
+        num_features.append(k+5000)
         accuracy.append(correct / tested)
 
     pylab.plot(num_features, accuracy)

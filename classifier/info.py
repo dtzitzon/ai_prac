@@ -68,13 +68,14 @@ def negate_sequence(text):
     return result
 
 def train():
+    print "Training Dataset"
     global pos, neg, totals
     retrain = False
 
-    Load counts if they already exist.
-    if not retrain and os.path.isfile(CDATA_FILE):
-        pos, neg, totals = cPickle.load(open(CDATA_FILE))
-        return
+    # Load counts if they already exist.
+    # if not retrain and os.path.isfile(CDATA_FILE):
+    #     pos, neg, totals = cPickle.load(open(CDATA_FILE))
+    #     return
 
     # Cornell Movie Review Data
     # for file in os.listdir(POS_PATH):
@@ -93,19 +94,13 @@ def train():
         # limit = 35000
         for row in tweets:
             if row[0] == '4': # positive
-                # if numpos > limit:
-                    # continue
-                # numpos += 1
-                for word in set(negate_sequence(row[1])):
-                    pos[word] += 1
-                    neg['not_'+word] += 1
-            elif row[0] == '0': # positive
-                # if numneg > limit:
-                    # continue
-                # numneg += 1
-                for word in set(negate_sequence(row[1])):
-                    neg[word] += 1
-                    pos['not_'+word] += 1
+                word_set = negate_sequence(row[1])
+                unigrams(word_set, True)
+                bigrams(word_set, True)
+            elif row[0] == '0': # negative
+                word_set = negate_sequence(row[1])
+                unigrams(word_set, False)
+                bigrams(word_set, False)
 
     # Hand Selected Yaks
     # for yak in training_data['yaks']:
@@ -134,16 +129,14 @@ def unigrams(word_set, sentiment):
             neg['not_'+word] += 1
         else:
             neg[word] += 1
-            neg['not_'+word] += 1
+            pos['not_'+word] += 1
 
 def bigrams(word_set, sentiment):
     for w1, w2 in itertools.izip(word_set, word_set[1:]):
         if sentiment:
             pos[w1+' '+w2] += 1
-            neg['not_'+w1+' '+w2] += 1
         else:
             neg[w1+' '+w2] += 1
-            neg['not_'+w1+' '+w2] += 1
 
 def prune_features():
     """
