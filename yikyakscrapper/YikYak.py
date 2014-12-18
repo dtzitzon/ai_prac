@@ -5,9 +5,13 @@ import requests
 import json
 import datetime
 import time
+import datetime
 
 
 messageIDs = set();
+
+def getTime():
+	return time.strftime("%Y-%m-%d--%H-%M-%S")
 
 def main():
 	# Title text
@@ -88,94 +92,34 @@ def main():
 			pk.Location("Dartmouth College", "43.7033", "-72.2883"),
 			pk.Location("Princeton University", "40.3487", "-74.6593"),
 			pk.Location("Yale University", "41.3111", "-72.9267"),
+			pk.Location("Times Square, NYC", "40.7588", "-79.951"),
+			pk.Location("austin texas", "30.267153", "-97.743061"),
+			pk.Location("Palo Alto, CA", "37.441883", "-122.143019"),
+			pk.Location("Los Angeles, CA", "34.052234", "-118.243685"),
+			pk.Location("Chicago, CA", "41.878114", "-87.629798")
 		]
 
 
-		updates = 0
-
 		while True:
-			if(updates > 0):
-				print("Going to sleep for an hour")
-				time.sleep(3600) #sleep for an hour then update
-				print()
-
 			for coordlocation in locations:
 				print("Retreiving Yaks for: "+coordlocation.address)
-				time.sleep(11)
+				time.sleep(2)
 				remoteyakker.update_location(coordlocation)
 				yaklist = remoteyakker.get_yaks()
 				currentlist =[]
 
 				currentlist = remoteyakker.get_area_tops()
-				print(currentlist)
+				# print(currentlist)
 				jsonData = yaksToJson(currentlist, coordlocation)
 
-				with open(coordlocation.address+'-'+str(updates)+'.json', 'w') as outfile:
+				with open(coordlocation.address+'_'+getTime()+'.json', 'w') as outfile:
 				    outfile.write(str(jsonData))
 
-			updates+=1
+			print("Going to sleep for an hour")
+			time.sleep(3600) #sleep for an hour then update
+			print()
 
 
-
-		# 	# Read Yaks
-		# 	if choice.upper() == 'R':
-		# 		currentlist = remoteyakker.get_yaks()
-		# 		read(currentlist)
-
-			# Read Local Top Yaks
-			# elif choice.upper() == 'T':
-			# 	currentlist = remoteyakker.get_area_tops()
-			# 	read(currentlist)
-
-		# 	# Read Best of All Time
-		# 	elif choice.upper() == 'B':
-		# 		currentlist = remoteyakker.get_greatest()
-		# 		read(currentlist)
-
-
-		# 	elif choice.upper() == 'G':
-		# 		currentlist = remoteyakker.get_my_tops()
-		# 		read(currentlist)
-
-		# 	# Show Recent Yak Upvotes
-		# 	elif choice.upper() == 'A':
-		# 		currentlist = remoteyakker.get_yaks()
-		# 		upvotedlist = []
-		# 		for yak in currentlist:
-		# 			if yak.liked:
-		# 				upvotedlist.append(yak)
-		# 		if len(upvotedlist) == 0:
-		# 			print("No recent upvotes")
-		# 		read(upvotedlist)
-
-		# 	# Change User ID
-		# 	elif choice[0].upper() == 'I':
-		# 		if len(choice) > 2:
-		# 			remoteyakker = setUserID(remoteyakker.location, choice[2:])
-		# 		else:
-		# 			remoteyakker = setUserID(remoteyakker.location)
-
-		# 		# Print User Info Text
-		# 		print("\nUser ID: ", remoteyakker.id, "\n")
-		# 		print("Connecting to Yik Yak server...\n")
-		# 		print ("Yakarma Level:",remoteyakker.get_yakarma(), "\n")
-
-		# 	# Change Location
-		# 	elif choice[0].upper() == 'L':
-		# 		# set location from parameter or input
-		# 		if len(choice) > 2:
-		# 			coordlocation = changeLocation(geocoder, choice[2:])
-		# 		else:
-		# 			coordlocation = changeLocation(geocoder)
-
-		# 		remoteyakker.update_location(coordlocation)
-
-		# 		yaklist = remoteyakker.get_yaks()
-		# 		currentlist = yaklist
-
-		# 	# Quit App
-		# 	elif choice.upper() == 'Q':
-		# 		break;
 
 def newLocation(geocoder, address=""):
 	# figure out location latitude and longitude based on address
