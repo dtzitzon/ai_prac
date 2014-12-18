@@ -35,7 +35,6 @@ FDATA_FILE = "reduceddata.pickle"
 POS_PATH = "../trainingdata/pos"
 NEG_PATH = "../trainingdata/neg"
 
-
 def negate_sequence(text):
     """
     Detects negations and transforms negated words into "not_" form.
@@ -68,15 +67,14 @@ def negate_sequence(text):
 
     return result
 
-
 def train():
     global pos, neg, totals
     retrain = False
 
-    # Load counts if they already exist.
-    # if not retrain and os.path.isfile(CDATA_FILE):
-    #     pos, neg, totals = cPickle.load(open(CDATA_FILE))
-    #     return
+    Load counts if they already exist.
+    if not retrain and os.path.isfile(CDATA_FILE):
+        pos, neg, totals = cPickle.load(open(CDATA_FILE))
+        return
 
     # Cornell Movie Review Data
     # for file in os.listdir(POS_PATH):

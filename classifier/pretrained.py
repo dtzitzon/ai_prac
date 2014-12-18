@@ -145,6 +145,32 @@ def get_paths():
     testfiles = [("../testdata/" + f) for f in os.listdir("../testdata/")]
     return testfiles
 
+
+def generate_statistics():
+    """
+    Writes the stats of all of the json files in test data to statistics.txt
+    """
+
+    stats_file = open("statistics.txt","w")
+
+    for filename in os.listdir("../universityYaks"):
+        with open("../universityYaks/" + filename) as test_file:
+            print test_file
+            test_data = json.load(test_file)
+
+        positive = 0
+        negative = 0
+
+        for yak in test_data['yacks']:
+            if classify(yak['message']):
+                positive += 1
+            else:
+                negative += 1
+
+        stats_file.write(filename[:-5] + '\t\t' + 'percent positive: ' + str(float(positive)/len(test_data['yacks'])) + '\tpercent negative: ' + str(float(negative)/len(test_data['yacks'])) + '\n')
+
+
 if __name__ == '__main__':
     feature_selection_experiment(get_paths())
+
 
