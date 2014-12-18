@@ -174,5 +174,14 @@ def generate_statistics():
 
 if __name__ == '__main__':
     feature_selection_experiment(get_paths())
+    while True:
+        commandline = raw_input("Input Sentence: ")
+        commandline = commandline.strip()
+
+        (b, _, _) = classify_demo(commandline)
+        if b :
+            print "Positive"
+        else:
+            print "Negitive"
 
 
