@@ -2,13 +2,14 @@
 Train a naive Bayes classifier from the IMDb reviews data set
 """
 from __future__ import division
-from collections import defaultdict
 from math import log, exp
 from functools import partial
 import re
 import os
 import random
+import itertools
 import pickle
+import json
 import pylab
 
 handle = open("countdata.pickle", "rb")
@@ -42,7 +43,7 @@ def get_positive_prob(word):
 def get_negative_prob(word):
     return 1.0 * (negative[word] + 1) / (2 * sums['neg'])
 
-def classify(text, pneg = 0.5, preprocessor=negate_sequence):
+def classify(text, preprocessor=negate_sequence):
     words = preprocessor(text)
     pscore, nscore = 0, 0
 
@@ -50,7 +51,6 @@ def classify(text, pneg = 0.5, preprocessor=negate_sequence):
         pscore += log(get_positive_prob(word))
         nscore += log(get_negative_prob(word))
 
-    print "pos: " + str(pscore) + " / neg: " + str(nscore)
     return pscore > nscore
 
 def classify_demo(text):
@@ -65,16 +65,13 @@ def classify_demo(text):
         print "%25s, pos=(%10lf, %10d) \t\t neg=(%10lf, %10d)" % (word, pdelta, positive[word], ndelta, negative[word])
 
     print "\nPositive" if pscore > nscore else "Negative"
-    print "log-differetce %.9f" % abs(pscore - nscore)
     print "Confidence: %lf" % exp(abs(pscore - nscore))
     return pscore > nscore, pscore, nscore
 
 def test():
     strings = [
-    open("pos_example").read(),
-    open("neg_example").read(),
-    "This book was quite good.",
-    "I think this product is horrible."
+        "This book was quite good.",
+        "I think this product is horrible."
     ]
     print map(classify, strings)
 
@@ -99,6 +96,15 @@ def mutual_info(word):
 def reduce_features(features, stream):
     return [word for word in negate_sequence(stream) if word in features]
 
+def reduce_features_with_bigrams(features, stream):
+    words = []
+    word_set = negate_sequence(stream)
+    words += [word for word in word_set if word in features]
+    for w1, w2 in itertools.izip(word_set, word_set[1:]):
+        if w1+' '+w2 in features:
+            words.append(w1+' '+w2)
+    return words
+
 def feature_selection_experiment(test_set):
     """
     Select top k features. Vary k from 1000 to 50000 and plot data
@@ -107,18 +113,27 @@ def feature_selection_experiment(test_set):
     sorted_keys = sorted(keys, cmp=lambda x, y: mutual_info(x) > mutual_info(y)) # Sort descending by mutual info
     features = set()
     num_features, accuracy = [], []
-    print sorted_keys[-100:]
 
     for k in xrange(0, 50000, 1000):
         features |= set(sorted_keys[k:k+1000])
+        # preprocessor = partial(reduce_features, features)
         preprocessor = partial(reduce_features, features)
         correct = 0
-        for text, label in test_set:
-            correct += classify(text) == label
+        tested = 0
+        for filename in test_set:
+            with open("../testdata/" + filename) as test_file:
+                test_data = json.load(test_file)
+
+            for yak in test_data['yaks']:
+                if yak['sentiment'] == 'positive':
+                    tested += 1
+                    correct += classify(yak['message'], preprocessor) == True
+                elif yak['sentiment'] == 'neutral':
+                    tested += 1
+                    correct += classify(yak['message'], preprocessor) == False
+
         num_features.append(k+1000)
-        accuracy.append(correct / len(test_set))
-    print negate_sequence("Is this a good idea")
-    print reduce_features(features, "Is this a good idea")
+        accuracy.append(correct / tested)
 
     pylab.plot(num_features, accuracy)
     pylab.show()
@@ -127,14 +142,35 @@ def get_paths():
     """
     Returns supervised paths annotated with their actual labels.
     """
-    posfiles = [("./aclImdb/test/pos/" + f, True) for f in os.listdir("./aclImdb/test/pos/")[:500]]
-    negfiles = [("./aclImdb/test/neg/" + f, False) for f in os.listdir("./aclImdb/test/neg/")[:500]]
-    return posfiles + negfiles
+    testfiles = [("../testdata/" + f) for f in os.listdir("../testdata/")]
+    return testfiles
+
+
+def generate_statistics():
+    """
+    Writes the stats of all of the json files in test data to statistics.txt
+    """
+
+    stats_file = open("statistics.txt","w")
+
+    for filename in os.listdir("../universityYaks"):
+        with open("../universityYaks/" + filename) as test_file:
+            print test_file
+            test_data = json.load(test_file)
+
+        positive = 0
+        negative = 0
+
+        for yak in test_data['yacks']:
+            if classify(yak['message']):
+                positive += 1
+            else:
+                negative += 1
+
+        stats_file.write(filename[:-5] + '\t\t' + 'percent positive: ' + str(float(positive)/len(test_data['yacks'])) + '\tpercent negative: ' + str(float(negative)/len(test_data['yacks'])) + '\n')
+
 
 if __name__ == '__main__':
-    print mutual_info('good')
-    print mutual_info('bad')
-    print mutual_info('incredible')
-    print mutual_info('jaskdhkasjdhkjincredible')
     feature_selection_experiment(get_paths())
+
 
