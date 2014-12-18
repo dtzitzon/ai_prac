@@ -45,7 +45,6 @@ def get_negative_prob(word):
 
 def classify(text, preprocessor=negate_sequence):
     words = preprocessor(text)
-    print words
     pscore, nscore = 0, 0
 
     for word in words:
@@ -64,10 +63,7 @@ def classify_demo(text):
         ndelta = log(get_negative_prob(word))
         pscore += pdelta
         nscore += ndelta
-        print "%25s, pos=(%10lf, %10d) \t\t neg=(%10lf, %10d)" % (word, pdelta, positive[word], ndelta, negative[word])
 
-    print "\nPositive" if pscore > nscore else "Negative"
-    print "Confidence: %lf" % exp(abs(pscore - nscore))
     return pscore > nscore, pscore, nscore
 
 def test():
@@ -157,7 +153,6 @@ def generate_statistics():
 
     for filename in os.listdir("../universityYaks"):
         with open("../universityYaks/" + filename) as test_file:
-            print test_file
             test_data = json.load(test_file)
 
         positive = 0
